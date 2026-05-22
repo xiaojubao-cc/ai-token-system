@@ -372,4 +372,34 @@
 
     </plugins>
   </build>
+  <repositories>
+    <repository>
+      <id>local-project-repo</id>
+      <name>Project Local Repository</name>
+      <url>file://${project.basedir}/repo</url>
+    </repository>
+    <repository>
+      <id>aliyun-public</id>
+      <name>Aliyun Public Repository</name>
+      <url>https://maven.aliyun.com/repository/public</url>
+      <releases><enabled>true</enabled></releases>
+      <snapshots><enabled>false</enabled></snapshots>
+    </repository>
+    <!-- 如果还不行，可以尝试添加 Spring 插件仓库 -->
+    <repository>
+      <id>spring-milestones</id>
+      <name>Spring Milestones</name>
+      <url>https://repo.spring.io/milestone</url>
+    </repository>
+  </repositories>
+
+  <pluginRepositories>
+    <pluginRepository>
+      <id>aliyun-plugin</id>
+      <name>Aliyun Plugin Repository</name>
+      <url>https://maven.aliyun.com/repository/public</url>
+      <releases><enabled>true</enabled></releases>
+      <snapshots><enabled>false</enabled></snapshots>
+    </pluginRepository>
+  </pluginRepositories>
 </project>

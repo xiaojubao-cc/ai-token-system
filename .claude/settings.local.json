@@ -3,7 +3,9 @@
     "allow": [
       "Bash(mvn test *)",
       "mcp__ide__getDiagnostics",
-      "Bash(mvn compile *)"
+      "Bash(mvn compile *)",
+      "Bash(cmd.exe *)",
+      "Bash(powershell.exe *)"
     ]
   }
 }
