@@ -1,0 +1,375 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>com.ai.system</groupId>
+  <artifactId>ai-token-system</artifactId>
+  <version>1.0-SNAPSHOT</version>
+  <packaging>jar</packaging>
+
+  <name>ai-token-system</name>
+  <url>http://maven.apache.org</url>
+
+  <properties>
+    <!-- 基础属性 -->
+    <maven.compiler.source>17</maven.compiler.source>
+    <maven.compiler.target>17</maven.compiler.target>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+
+    <!-- 统一 Spring Boot 版本 -->
+    <spring.boot.version>3.3.4</spring.boot.version>
+
+    <!-- Web 相关 -->
+    <springdoc.version>2.6.0</springdoc.version>
+    <knife4j.version>4.5.0</knife4j.version>
+
+    <!-- DB 相关 -->
+    <druid.version>1.2.23</druid.version><!-- 更新到兼容 Spring Boot 3 的版本 -->
+    <mybatis-plus.version>3.5.8</mybatis-plus.version>
+<!--    <dynamic-datasource.version>4.3.1</dynamic-datasource.version>-->
+    <redisson.version>3.36.0</redisson.version>
+    <mysql.version>8.0.33</mysql.version> <!-- 更新到 Spring Boot 3.3.4 默认版本 -->
+    <opengauss.jdbc.version>5.1.0</opengauss.jdbc.version>
+
+    <!-- Test 测试相关 -->
+    <podam.version>8.0.2.RELEASE</podam.version>
+    <jedis-mock.version>1.1.4</jedis-mock.version>
+    <mockito-inline.version>5.2.0</mockito-inline.version>
+
+    <!-- 工具类相关 -->
+    <captcha-plus.version>2.0.3</captcha-plus.version>
+    <jsoup.version>1.18.1</jsoup.version>
+    <lombok.version>1.18.34</lombok.version>
+    <mapstruct.version>1.6.2</mapstruct.version>
+    <hutool.version>5.8.32</hutool.version>
+    <easyexcel.version>3.1.1</easyexcel.version>
+    <velocity.version>2.4</velocity.version>
+    <fastjson.version>1.2.83</fastjson.version>
+    <guava.version>33.3.1-jre</guava.version>
+    <transmittable-thread-local.version>2.14.5</transmittable-thread-local.version>
+    <commons-net.version>3.11.1</commons-net.version>
+    <tika-core.version>2.9.2</tika-core.version>
+    <ip2region.version>2.7.0</ip2region.version>
+    <netty.version>4.1.113.Final</netty.version>
+    <sshj.version>0.40.0</sshj.version>
+    <commons-chain.version>1.2</commons-chain.version>
+    <bcprov-version>1.64</bcprov-version>
+    <mail.version>2.0.1</mail.version>
+    <roaringbitmap.version>0.9.32</roaringbitmap.version>
+    <jasypt.version>3.0.5</jasypt.version>
+    <!--job相关-->
+    <shedlock.version>5.10.0</shedlock.version>
+    <shedlock.redis.version>5.10.0</shedlock.redis.version>
+
+    <!--重试-->
+    <guava-retrying.version>2.0.0</guava-retrying.version>
+    <disruptor.version>4.0.0</disruptor.version>
+
+    <!-- 插件版本 -->
+    <flatten-maven-plugin.version>1.6.0</flatten-maven-plugin.version>
+    <spring-boot-maven-plugin.version>${spring.boot.version}</spring-boot-maven-plugin.version>
+  </properties>
+
+  <parent>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-parent</artifactId>
+    <version>3.3.4</version>
+    <relativePath/>
+  </parent>
+
+  <dependencies>
+    <!-- ========== Spring 核心 ========== -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-configuration-processor</artifactId>
+      <optional>true</optional>
+    </dependency>
+
+    <!-- ========== Web 相关 ========== -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-web</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-validation</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-security</artifactId>
+    </dependency>
+
+    <!-- OpenAPI 文档 -->
+    <dependency>
+      <groupId>org.springdoc</groupId>
+      <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+      <version>${springdoc.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.github.xiaoymin</groupId>
+      <artifactId>knife4j-openapi3-jakarta-spring-boot-starter</artifactId>
+      <version>${knife4j.version}</version>
+    </dependency>
+
+    <!-- ========== DB 相关 ========== -->
+    <!-- 数据源 -->
+    <dependency>
+      <groupId>com.alibaba</groupId>
+      <artifactId>druid-spring-boot-3-starter</artifactId>
+      <version>${druid.version}</version>
+    </dependency>
+
+    <!-- MyBatis Plus Starter (包含 MyBatis) -->
+    <dependency>
+      <groupId>com.baomidou</groupId>
+      <artifactId>mybatis-plus-spring-boot3-starter</artifactId>
+      <version>${mybatis-plus.version}</version>
+    </dependency>
+    <!-- 多数据源 -->
+<!--    <dependency>-->
+<!--      <groupId>com.baomidou</groupId>-->
+<!--      <artifactId>dynamic-datasource-spring-boot3-starter</artifactId>-->
+<!--      <version>${dynamic-datasource.version}</version>-->
+<!--    </dependency>-->
+
+    <!-- Spring Data Redis -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-data-redis</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.redisson</groupId>
+      <artifactId>redisson-spring-boot-starter</artifactId>
+      <version>${redisson.version}</version>
+    </dependency>
+
+    <!-- OAuth2 Authorization Server -->
+    <dependency>
+      <groupId>org.springframework.security</groupId>
+      <artifactId>spring-security-oauth2-authorization-server</artifactId>
+    </dependency>
+
+<!--    &lt;!&ndash; ShedLock 核心 + Redis 支持 &ndash;&gt;-->
+<!--    <dependency>-->
+<!--      <groupId>net.javacrumbs.shedlock</groupId>-->
+<!--      <artifactId>shedlock-spring</artifactId>-->
+<!--      <version>${shedlock.version}</version> &lt;!&ndash; 兼容 Spring Boot 3.x &ndash;&gt;-->
+<!--    </dependency>-->
+<!--    <dependency>-->
+<!--      <groupId>net.javacrumbs.shedlock</groupId>-->
+<!--      <artifactId>shedlock-provider-redis-spring</artifactId>-->
+<!--      <version>${shedlock.redis.version}</version>-->
+<!--    </dependency>-->
+
+    <!-- 数据库驱动 -->
+    <dependency>
+      <groupId>mysql</groupId>
+      <artifactId>mysql-connector-java</artifactId>
+      <version>${mysql.version}</version>
+      <scope>runtime</scope>
+    </dependency>
+
+    <!-- ========== 测试相关 ========== -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-test</artifactId>
+      <scope>test</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>org.junit.vintage</groupId>
+          <artifactId>junit-vintage-engine</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>org.mockito</groupId>
+      <artifactId>mockito-inline</artifactId>
+      <version>${mockito-inline.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.github.fppt</groupId>
+      <artifactId>jedis-mock</artifactId>
+      <version>${jedis-mock.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>uk.co.jemos.podam</groupId>
+      <artifactId>podam</artifactId>
+      <version>${podam.version}</version>
+      <scope>test</scope>
+    </dependency>
+
+    <!-- ========== 工具类 ========== -->
+    <dependency>
+      <groupId>org.projectlombok</groupId>
+      <artifactId>lombok</artifactId>
+      <version>${lombok.version}</version>
+      <optional>true</optional>
+    </dependency>
+
+    <dependency>
+      <groupId>com.tyysdk</groupId>
+      <artifactId>ai-api-sign-sdk</artifactId>
+      <version>1.0.2</version>
+    </dependency>
+
+    <!-- MapStruct -->
+    <dependency>
+      <groupId>org.mapstruct</groupId>
+      <artifactId>mapstruct</artifactId>
+      <version>${mapstruct.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.mapstruct</groupId>
+      <artifactId>mapstruct-processor</artifactId>
+      <version>${mapstruct.version}</version>
+      <scope>provided</scope>
+    </dependency>
+
+    <!-- Hutool 工具包 -->
+    <dependency>
+      <groupId>cn.hutool</groupId>
+      <artifactId>hutool-all</artifactId>
+      <version>${hutool.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>com.github.promeg</groupId>
+      <artifactId>tinypinyin</artifactId>
+      <version>2.0.3</version> <!-- 检查最新版本 -->
+    </dependency>
+
+    <!-- Excel 操作 -->
+    <dependency>
+      <groupId>com.alibaba</groupId>
+      <artifactId>easyexcel</artifactId>
+      <version>${easyexcel.version}</version>
+    </dependency>
+
+    <!-- JSON 处理 -->
+    <dependency>
+      <groupId>com.alibaba</groupId>
+      <artifactId>fastjson</artifactId>
+      <version>${fastjson.version}</version>
+    </dependency>
+
+    <!-- Google 工具包 -->
+    <dependency>
+      <groupId>com.google.guava</groupId>
+      <artifactId>guava</artifactId>
+      <version>${guava.version}</version>
+    </dependency>
+
+    <!-- 线程上下文 -->
+    <dependency>
+      <groupId>com.alibaba</groupId>
+      <artifactId>transmittable-thread-local</artifactId>
+      <version>${transmittable-thread-local.version}</version>
+    </dependency>
+
+    <!-- 网络工具 -->
+    <dependency>
+      <groupId>commons-net</groupId>
+      <artifactId>commons-net</artifactId>
+      <version>${commons-net.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.hierynomus</groupId>
+      <artifactId>sshj</artifactId>
+      <version>${sshj.version}</version>
+    </dependency>
+
+    <!--重试-->
+    <dependency>
+      <groupId>com.github.rholder</groupId>
+      <artifactId>guava-retrying</artifactId>
+      <version>${guava-retrying.version}</version>
+    </dependency>
+
+    <!--责任链-->
+    <dependency>
+      <groupId>commons-chain</groupId>
+      <artifactId>commons-chain</artifactId>
+      <version>${commons-chain.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.roaringbitmap</groupId>
+      <artifactId>RoaringBitmap</artifactId>
+      <version>${roaringbitmap.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.bouncycastle</groupId>
+      <artifactId>bcprov-jdk15on</artifactId>
+      <version>${bcprov-version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-pool2</artifactId>
+    </dependency>
+
+    <!--发送邮件-->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-mail</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>com.github.ulisesbocchio</groupId>
+      <artifactId>jasypt-spring-boot-starter</artifactId>
+      <version>${jasypt.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>com.lmax</groupId>
+      <artifactId>disruptor</artifactId>
+      <version>${disruptor.version}</version>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <finalName>${project.artifactId}_${project.version}</finalName>
+    <plugins>
+      <!-- Spring Boot Maven 插件 -->
+      <plugin>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-maven-plugin</artifactId>
+        <version>${spring-boot-maven-plugin.version}</version>
+        <configuration>
+          <!-- 添加以下配置 -->
+          <mainClass>com.ai.system.AiTokenSystemApplication</mainClass>
+          <excludes>
+            <exclude>
+              <groupId>org.projectlombok</groupId>
+              <artifactId>lombok</artifactId>
+            </exclude>
+          </excludes>
+        </configuration>
+      </plugin>
+
+      <!-- 依赖分析插件 -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <version>3.6.1</version>
+        <executions>
+          <execution>
+            <id>analyze</id>
+            <goals>
+              <goal>analyze</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>com.github.ulisesbocchio</groupId>
+        <artifactId>jasypt-maven-plugin</artifactId>
+        <version>3.0.5</version>
+      </plugin>
+
+    </plugins>
+  </build>
+</project>

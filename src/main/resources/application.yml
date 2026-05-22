@@ -1,0 +1,59 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: ai-token-system
+  datasource:
+    url: jdbc:mysql://49.232.190.146:3306/ai_token?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai
+    username: root
+    password: 123456
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  data:
+    redis:
+      host: 49.232.190.146
+      port: 6379
+      timeout: 30000
+      pool:
+        min-idle: 8 #连接池最小空闲连接数
+        max-idle: 64 #连接池最大空闭连接数
+        max-active: 100 #连接池最大连接数（负值表示没有限制）
+        max-wait: 30000 #连接池最大阻塞等待时间（当前配置30s，负值表示没有限制）
+        time-between-eviction-runs: PT5M #空闲对象逐出器线程的运行间隔时(当前配置5分钟)。当为正值时，空闲对象逐出器线程启动，否则不执行空闲对象逐出。
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: gcsunshine.jerry@gmail.com
+    password: qwdqywkeccjxribr
+    default-encoding: UTF-8
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+#线程池配置
+thread-pool:
+  master:
+    core-pool-size: 5
+    max-pool-size: 10
+    queue-capacity: 500
+    keep-alive-seconds: 60
+    thread-name-prefix: "master-thread-"
+
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  global-config:
+    db-config:
+      id-type: auto
+
+tyy-properties:
+  access-key: 038b37e44a2943f0a91b70dceededf00
+  security-key: 9eb6443e7e7a41d5851ced0b08faced3
+  base-url: https://aigw-global.ctapi.ctyun.cn
+  #分页查询用户的密钥列表
+  apikey-url: /v1/apikey/list
+  #查询用户Token使用量
+  token-url: /v1/tokenUsage/query

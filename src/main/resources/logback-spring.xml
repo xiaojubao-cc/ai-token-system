@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <!-- 应用名称和日志路径 -->
+    <property name="APP_NAME" value="ai-token-system" />
+    <property name="LOG_HOME" value="${log.dir:-logs}/${APP_NAME}" />
+    <property name="ERROR_LOG_HOME" value="${LOG_HOME}/error" />
+
+    <!-- 日志格式：增加异常堆栈长度限制（10行），避免无限输出 -->
+    <property name="LOG_EXCEPTION_CONVERSION_WORD" value="%ex{10}" />
+    <property name="ENCODER_PATTERN" value="%d{yyyy-MM-dd HH:mm:ss.SSS} %highlight(%-5level) [%thread][%X{traceId:-N/A}] %cyan(%logger{80}) - %msg%n${LOG_EXCEPTION_CONVERSION_WORD}" />
+
+    <!-- ===================== 控制台 Appender ===================== -->
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>${ENCODER_PATTERN}</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+        <!-- 仅在 local 环境启用彩色输出，避免 Windows 兼容性问题 -->
+        <springProfile name="local">
+            <withJansi>true</withJansi>
+        </springProfile>
+    </appender>
+
+    <!-- ===================== 滚动文件 Appender（普通日志） ===================== -->
+    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_HOME}/app.log</file>
+        <encoder>
+            <pattern>${ENCODER_PATTERN}</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+        <!-- 异步模式：不立即刷盘，由操作系统决定，提升性能 -->
+        <immediateFlush>false</immediateFlush>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_HOME}/app.%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <maxFileSize>100MB</maxFileSize>
+            <maxHistory>30</maxHistory>
+            <totalSizeCap>20GB</totalSizeCap>
+        </rollingPolicy>
+    </appender>
+
+    <!-- ===================== 错误日志专用 Appender（单独文件） ===================== -->
+    <appender name="ERROR_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <!-- 过滤器：仅接收 ERROR 级别 -->
+        <filter class="ch.qos.logback.classic.filter.LevelFilter">
+            <level>ERROR</level>
+            <onMatch>ACCEPT</onMatch>
+            <onMismatch>DENY</onMismatch>
+        </filter>
+        <file>${ERROR_LOG_HOME}/error.log</file>
+        <encoder>
+            <pattern>${ENCODER_PATTERN}</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+        <!-- 错误日志通常量小，但需要实时性，因此可适当刷盘 -->
+        <immediateFlush>true</immediateFlush>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${ERROR_LOG_HOME}/error.%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <maxFileSize>100MB</maxFileSize>
+            <maxHistory>30</maxHistory>
+            <totalSizeCap>1GB</totalSizeCap>
+        </rollingPolicy>
+    </appender>
+
+    <!-- ===================== 异步 Appender（提升性能） ===================== -->
+    <!-- 普通日志异步：丢弃阈值0表示队列满时不丢失 INFO 以上级别，队列大小可根据并发量调整 -->
+    <appender name="ASYNC_FILE" class="ch.qos.logback.classic.AsyncAppender">
+        <discardingThreshold>0</discardingThreshold>
+        <queueSize>2048</queueSize>          <!-- 适当增大队列，避免高并发丢日志 -->
+        <includeCallerData>false</includeCallerData>  <!-- 不包含调用者数据，提升性能 -->
+        <appender-ref ref="FILE"/>
+    </appender>
+
+    <!-- 错误日志异步：因已 immediateFlush=true，若异步反而可能丢失实时性，改为直接同步或使用独立队列 -->
+    <!-- 考虑到错误日志需要尽快感知，这里不再使用异步，直接引用 ERROR_FILE -->
+    <!-- 若错误日志量极大，可改为异步队列，但需权衡实时性 -->
+
+    <!-- ===================== 日志级别控制（由 application.yml 动态覆盖） ===================== -->
+    <!-- 设置根日志默认级别为 INFO，Spring Boot 外部配置可覆盖 -->
+    <root level="INFO">
+        <appender-ref ref="STDOUT" />
+        <appender-ref ref="ASYNC_FILE" />
+        <appender-ref ref="ERROR_FILE" />
+    </root>
+
+    <!-- 应用包日志（可以由 application.yml 中的 logging.level.com.ai.system 动态调整） -->
+    <logger name="com.ai.system" additivity="false">
+        <appender-ref ref="STDOUT" />
+        <appender-ref ref="ASYNC_FILE" />
+        <appender-ref ref="ERROR_FILE" />
+    </logger>
+
+    <!-- ===================== 框架及第三方日志级别优化 ===================== -->
+    <!-- Spring Security 认证失败细节（INFO 级别会打印敏感信息，生产可设为 WARN） -->
+    <logger name="org.springframework.security" level="WARN" />
+    <!-- Spring Web 请求响应的 DEBUG 日志很吵，提高至 INFO -->
+    <logger name="org.springframework.web" level="INFO" />
+    <!-- 抑制 Spring MVC 请求体打印，避免密码等敏感信息泄露 -->
+    <logger name="org.springframework.web.servlet.mvc.method.annotation.RequestResponseBodyMethodProcessor" level="WARN" />
+    <!-- 启动失败诊断改为 WARN，而不是完全关闭，便于排查 -->
+    <logger name="org.springframework.boot.autoconfigure.logging.ConditionEvaluationReportLogger" level="WARN" />
+    <logger name="org.springframework.boot.diagnostics.LoggingFailureAnalysisReporter" level="WARN" />
+    <!-- Hibernate SQL 日志（生产环境建议 WARN，开发可 DEBUG） -->
+    <logger name="org.hibernate.SQL" level="WARN" />
+    <logger name="org.hibernate.type.descriptor.sql.BasicBinder" level="WARN" />
+    <!-- 数据库连接池日志（HikariCP 较安静，保持 WARN） -->
+    <logger name="com.zaxxer.hikari" level="WARN" />
+    <!-- 防止某些库输出过多 DEBUG 日志 -->
+    <logger name="org.apache" level="WARN" />
+    <logger name="httpclient" level="WARN" />
+
+    <!-- 如果将来需要开启 Redis 日志拦截器，取消注释并调整级别 -->
+    <!--
+    <logger name="com.ai.system.interceptor.RedisLogInterceptor" additivity="false">
+        <appender-ref ref="STDOUT"/>
+        <appender-ref ref="ASYNC_FILE"/>
+        <appender-ref ref="ERROR_FILE"/>
+    </logger>
+    -->
+</configuration>
