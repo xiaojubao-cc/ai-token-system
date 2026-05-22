@@ -152,6 +152,9 @@ public class ApiKeyServiceImpl implements ApiKeyService {
                 .map(ApiKey::getUserId)
                 .distinct()
                 .collect(Collectors.toList());
+        if (userIds.isEmpty()) {
+            return Map.of();
+        }
         List<User> users = userMapper.selectBatchIds(userIds);
         return users.stream().collect(Collectors.toMap(User::getId, u -> u));
     }
