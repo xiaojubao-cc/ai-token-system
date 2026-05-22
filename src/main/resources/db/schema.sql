@@ -3,6 +3,7 @@
 CREATE TABLE IF NOT EXISTS ai_token_user (
     id          BIGINT AUTO_INCREMENT PRIMARY KEY,
     username    VARCHAR(50)  NOT NULL COMMENT '用户名',
+    business_name VARCHAR(255) DEFAULT NULL COMMENT '公司名称',
     password    VARCHAR(255) NOT NULL COMMENT '密码',
     phone       VARCHAR(20)  COMMENT '手机号',
     email       VARCHAR(100) COMMENT '邮箱',
