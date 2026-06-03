@@ -212,3 +212,114 @@ docker exec -it ai-token-mysql mysql -uroot -p123456 ai_token
 ├────────────┼──────────────────────────────────┤
 │ 清空数据   │ docker compose down -v           │
 └────────────┴──────────────────────────────────┘
+# 1. 创建 Docker 配置目录（如果不存在）
+sudo mkdir -p /etc/docker
+
+# 2. 写入镜像加速配置（如果原来有 daemon.json，会先备份）
+sudo cp /etc/docker/daemon.json /etc/docker/daemon.json.bak 2>/dev/null || true
+echo '{"registry-mirrors": ["https://docker.1ms.run"]}' | sudo tee /etc/docker/daemon.json > /dev/null
+
+# 3. 重启 Docker 服务
+sudo systemctl daemon-reload
+sudo systemctl restart docker
+
+# 4. 验证是否生效
+docker info | grep -A 1 "Registry Mirrors"
+
+  ---
+附录：使用 Podman 部署
+
+Podman 是无守护进程的容器引擎，命令行与 Docker 兼容，适合不需要 Docker Daemon 的场景。
+
+▎第一步：安装 Podman
+
+Ubuntu / Debian 系统：
+
+# Podman 在较新版本的 Ubuntu/Debian 中已包含在官方源
+apt update
+apt install -y podman
+
+# 安装 podman-compose（Python 版）
+apt install -y python3-pip
+pip3 install podman-compose
+
+# 或者使用 podman 内置的 compose 功能（Podman 4.0+ 内置，无需额外安装）
+# podman compose 可以直接替代 podman-compose
+
+# 验证安装
+podman --version
+podman compose version
+
+CentOS / RHEL 系统：
+
+# CentOS 8+ / RHEL 8+ 直接安装
+yum install -y podman
+
+# 安装 podman-compose
+yum install -y python3-pip
+pip3 install podman-compose
+
+# 验证安装
+podman --version
+podman compose version
+
+▎第二步：启动项目
+
+Podman 与 Docker 命令几乎一致，直接使用 podman compose 替换 docker compose 即可：
+
+cd /opt/ai-token-system
+
+# 一键启动所有服务（和 Docker 用法完全相同）
+podman compose up -d
+
+# 查看容器状态
+podman compose ps
+
+# 查看应用日志
+podman compose logs -f app
+
+# 重启应用
+podman compose restart app
+
+# 重新构建并启动
+podman compose up -d --build app
+
+# 停止所有服务
+podman compose stop
+
+# 停止并删除容器
+podman compose down
+
+# 停止并删除容器 + 清空数据（谨慎！）
+podman compose down -v
+
+▎Docker ↔ Podman 命令对照
+
+┌──────────────────────────────┬──────────────────────────────────┐
+│           Docker             │              Podman              │
+├──────────────────────────────┼──────────────────────────────────┤
+│ docker compose up -d         │ podman compose up -d             │
+├──────────────────────────────┼──────────────────────────────────┤
+│ docker compose ps            │ podman compose ps                │
+├──────────────────────────────┼──────────────────────────────────┤
+│ docker compose logs -f app   │ podman compose logs -f app       │
+├──────────────────────────────┼──────────────────────────────────┤
+│ docker compose restart app   │ podman compose restart app       │
+├──────────────────────────────┼──────────────────────────────────┤
+│ docker compose down          │ podman compose down              │
+├──────────────────────────────┼──────────────────────────────────┤
+│ docker compose down -v       │ podman compose down -v           │
+├──────────────────────────────┼──────────────────────────────────┤
+│ docker exec -it <容器名> sh  │ podman exec -it <容器名> sh      │
+├──────────────────────────────┼──────────────────────────────────┤
+│ docker ps                    │ podman ps                        │
+├──────────────────────────────┼──────────────────────────────────┤
+│ docker images                │ podman images                    │
+└──────────────────────────────┴──────────────────────────────────┘
+
+▎注意事项
+
+1. Podman 默认以 rootless 模式运行（无需 sudo），但使用端口 80/443 等特权端口时需要用 sudo 或配置 sysctl。
+2. 如果遇到 podman compose 不可用，可以安装 podman-compose（Python 版），用法为 podman-compose up -d（带连字符）。
+3. docker-compose.yml 文件完全兼容 Podman，无需任何修改。
+4. Podman 没有 Docker Daemon，不需要执行 systemctl start docker 这类命令。
