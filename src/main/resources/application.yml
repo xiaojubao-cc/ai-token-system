@@ -10,13 +10,13 @@ spring:
   application:
     name: ai-token-system
   datasource:
-    url: jdbc:mysql://49.232.190.146:3306/ai_token?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai
+    url: jdbc:mysql://140.246.36.129:3306/ai_token?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai
     username: root
     password: 123456
     driver-class-name: com.mysql.cj.jdbc.Driver
   data:
     redis:
-      host: 49.232.190.146
+      host: 140.246.36.129
       port: 6379
       timeout: 30000
       pool:

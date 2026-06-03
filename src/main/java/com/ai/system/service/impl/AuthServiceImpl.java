@@ -60,6 +60,7 @@ public class AuthServiceImpl implements AuthService {
 
     public TokenDO login(String username, String password, Boolean rememberMe) {
         User user = userMapper.selectOne(new LambdaQueryWrapper<User>().eq(User::getUsername, username));
+        Assert.notNull(user, () -> new ServiceException(UserErrorCodeConstants.USER_NOT_EXISTS));
         Assert.equals(user.getStatus().toString(), "1",
                 () -> new ServiceException(UserErrorCodeConstants.USER_SUSPENDED));
 
