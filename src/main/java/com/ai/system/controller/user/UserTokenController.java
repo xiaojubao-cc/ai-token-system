@@ -13,10 +13,12 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -25,6 +27,7 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/user/token-usage")
+@Slf4j
 public class UserTokenController {
 
     @Resource
@@ -45,6 +48,7 @@ public class UserTokenController {
     @PostMapping("/export")
     public void export(@Valid @RequestBody TokenUsageQueryVO query, HttpServletResponse response) throws IOException {
         Long userId = getCurrentUserId();
+
         List<TokenUsageDO> allData = tokenUsageService.userQueryAll(
                 userId, query.getApikeyId(), query.getGroupBy(),
                 query.getStartTime(), query.getEndTime());
@@ -60,11 +64,28 @@ public class UserTokenController {
             return e;
         }).collect(Collectors.toList());
 
+        // 先写入内存缓冲区，确保 Excel 生成成功后再设置响应头
+        ByteArrayOutputStream byteOut = new ByteArrayOutputStream();
+        try {
+            EasyExcel.write(byteOut, TokenUsageExportDO.class)
+                    .sheet("Token用量")
+                    .doWrite(exportList);
+        } catch (Exception e) {
+            log.error("生成Excel文件失败", e);
+            response.setContentType("application/json;charset=UTF-8");
+            response.getWriter().write("{\"code\":500,\"message\":\"导出失败\"}");
+            return;
+        }
+
+        String fileName = "Token用量导出.xlsx";
+        String encodedFileName = URLEncoder.encode(fileName, StandardCharsets.UTF_8)
+                .replaceAll("\\+", "%20");
         response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-        response.setCharacterEncoding("utf-8");
-        String fileName = URLEncoder.encode("Token用量导出", StandardCharsets.UTF_8).replace("\\+", "%20");
-        response.setHeader("Content-disposition", "attachment;filename*=utf-8''" + fileName + ".xlsx");
-        EasyExcel.write(response.getOutputStream(), TokenUsageExportDO.class).sheet("Token用量").doWrite(exportList);
+        response.setCharacterEncoding("UTF-8");
+        response.setHeader("Content-Disposition",
+                "attachment; filename=\"" + encodedFileName + "\"; filename*=UTF-8''" + encodedFileName);
+
+        byteOut.writeTo(response.getOutputStream());
     }
 
     private Long getCurrentUserId() {
