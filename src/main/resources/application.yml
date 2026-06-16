@@ -10,10 +10,40 @@ spring:
   application:
     name: ai-token-system
   datasource:
-    url: jdbc:mysql://140.246.36.129:3306/ai_token?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai
-    username: root
-    password: 123456
-    driver-class-name: com.mysql.cj.jdbc.Driver
+    # 1. 指定数据源类型为 Druid（非必须，但建议显式指定）
+    type: com.alibaba.druid.pool.DruidDataSource
+    druid:
+      # === 数据源基础配置（必填）===
+      driver-class-name: com.mysql.cj.jdbc.Driver  # MySQL 8+ 驱动
+      url: jdbc:mysql://140.246.36.129:3306/ai_token?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai
+      username: root
+      password: 123456
+      initial-size: 5
+      # 最小空闲连接数
+      min-idle: 5
+      # 最大活跃连接数
+      max-active: 20
+      # 获取连接时的最大等待时间（毫秒），超时则抛出异常
+      max-wait: 60000
+
+      # 配置间隔多久进行一次检测，检测需要关闭的空闲连接（毫秒）
+      time-between-eviction-runs-millis: 60000
+      # 配置一个连接在池中最小生存时间（毫秒）
+      min-evictable-idle-time-millis: 300000
+
+      # 验证连接是否有效的 SQL（MySQL 为 'SELECT 1'，Oracle 为 'SELECT 1 FROM DUAL'）
+      validation-query: SELECT 1
+      # 建议开启，在空闲时检查连接有效性
+      test-while-idle: true
+      # 获取连接时不做有效性检查，false 可提升性能
+      test-on-borrow: false
+      # 归还连接时不做有效性检查
+      test-on-return: false
+
+      # 是否缓存 PreparedStatement（PSCache）
+      pool-prepared-statements: true
+      # 每个连接上缓存的最大 PreparedStatement 数量
+      max-pool-prepared-statement-per-connection-size: 20
   data:
     redis:
       host: 140.246.36.129
@@ -55,10 +85,18 @@ mybatis-plus:
       id-type: auto
 
 tyy-properties:
-  access-key: 038b37e44a2943f0a91b70dceededf00
-  security-key: 9eb6443e7e7a41d5851ced0b08faced3
+  access-key: ada3e64208614cdcbf82f3273a649175
+  security-key: 468a9d2628364cd38321f3d2da431847
   base-url: https://aigw-global.ctapi.ctyun.cn
   #分页查询用户的密钥列表
   apikey-url: /v1/apikey/list
-  #查询用户Token使用量
+  #查询用户Token使用量（新接口）
   token-url: /v1/tokenUsage/query
+  #查询可用模型列表
+  model-list-url: /v1/model/list
+  #创建密钥url
+  apikey-create-url: /v1/apikey/create
+  #删除密钥url
+  apikey-delete-url: /v1/apikey/delete
+  #更新密钥状态url
+  apikey-update-url: /v1/apikey/update

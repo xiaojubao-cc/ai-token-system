@@ -6,6 +6,8 @@ import java.util.List;
 @Data
 public class DashboardStatsDO {
     private Long totalTokens;
+    private Long totalInputTokens;
+    private Long totalOutputTokens;
     private Long totalRequests;
     private Long activeUsers;
     private List<TrendPoint> trendData;

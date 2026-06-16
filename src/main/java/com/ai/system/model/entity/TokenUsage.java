@@ -23,7 +23,15 @@ public class TokenUsage {
 
     private Long tokens;
 
+    private Long inputTokens;
+
+    private Long outputTokens;
+
     private Long requestCount;
+
+    private Long totalDuration;
+
+    private Long totalAmount;
 
     private LocalDate recordDate;
 

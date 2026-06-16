@@ -1,7 +1,9 @@
 package com.ai.system.service.impl;
 
+import com.ai.system.mapper.ApiKeyMapper;
 import com.ai.system.model.dto.token.TokenUsageDO;
 import com.ai.system.controller.dashboard.vo.DashboardStatsDO;
+import com.ai.system.model.entity.ApiKey;
 import com.ai.system.service.DashboardService;
 import com.ai.system.service.TokenUsageService;
 import jakarta.annotation.Resource;
@@ -15,6 +17,9 @@ public class DashboardServiceImpl implements DashboardService {
 
     @Resource
     private TokenUsageService tokenUsageService;
+
+    @Resource
+    private ApiKeyMapper apiKeyMapper;
 
     @Override
     public DashboardStatsDO getAdminStats(String startTime, String endTime) {
@@ -34,15 +39,23 @@ public class DashboardServiceImpl implements DashboardService {
         DashboardStatsDO stats = new DashboardStatsDO();
 
         long totalTokens = data.stream().mapToLong(TokenUsageDO::getTokens).sum();
+        long totalInputTokens = data.stream().mapToLong(d -> d.getInputTokens() != null ? d.getInputTokens() : 0L).sum();
+        long totalOutputTokens = data.stream().mapToLong(d -> d.getOutputTokens() != null ? d.getOutputTokens() : 0L).sum();
         long totalRequests = data.stream().mapToLong(TokenUsageDO::getRequest).sum();
-        Set<String> activeUsers = data.stream()
-                .map(v -> v.getBusinessName() != null ? v.getBusinessName() : v.getUserId())
-                .filter(Objects::nonNull)
-                .collect(Collectors.toSet());
+        // 按 apikey 所属的系统用户 ID 去重，统计活跃用户数
+        Set<Long> apikeyIds = data.stream()
+                .map(TokenUsageDO::getApikeyId).filter(Objects::nonNull).collect(Collectors.toSet());
+        Set<Long> activeUserIds = new HashSet<>();
+        if (!apikeyIds.isEmpty()) {
+            List<ApiKey> keys = apiKeyMapper.selectBatchIds(apikeyIds);
+            keys.stream().map(ApiKey::getUserId).filter(Objects::nonNull).forEach(activeUserIds::add);
+        }
 
         stats.setTotalTokens(totalTokens);
+        stats.setTotalInputTokens(totalInputTokens);
+        stats.setTotalOutputTokens(totalOutputTokens);
         stats.setTotalRequests(totalRequests);
-        stats.setActiveUsers((long) activeUsers.size());
+        stats.setActiveUsers((long) activeUserIds.size());
 
         // 趋势按 recordDate 聚合
         Map<String, Long> trendMap = new LinkedHashMap<>();
@@ -83,6 +96,8 @@ public class DashboardServiceImpl implements DashboardService {
         DashboardStatsDO stats = new DashboardStatsDO();
 
         long totalTokens = data.stream().mapToLong(TokenUsageDO::getTokens).sum();
+        long totalInputTokens = data.stream().mapToLong(d -> d.getInputTokens() != null ? d.getInputTokens() : 0L).sum();
+        long totalOutputTokens = data.stream().mapToLong(d -> d.getOutputTokens() != null ? d.getOutputTokens() : 0L).sum();
         long totalRequests = data.stream().mapToLong(TokenUsageDO::getRequest).sum();
         long activeKeyCount = data.stream()
                 .map(TokenUsageDO::getApikeyId)
@@ -91,6 +106,8 @@ public class DashboardServiceImpl implements DashboardService {
                 .count();
 
         stats.setTotalTokens(totalTokens);
+        stats.setTotalInputTokens(totalInputTokens);
+        stats.setTotalOutputTokens(totalOutputTokens);
         stats.setTotalRequests(totalRequests);
         stats.setActiveUsers(activeKeyCount);
 

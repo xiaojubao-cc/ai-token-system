@@ -7,10 +7,9 @@ public class ApikeyDO {
     private Long id;
     private Long userId;
     private String username;
+    private String businessName;
     private String apikey;
-    private Long modelId;
-    private String modelName;
-    private String modelCode;
+    private String secretKey;
     private Integer useStatus;
     private String createTime;
 }

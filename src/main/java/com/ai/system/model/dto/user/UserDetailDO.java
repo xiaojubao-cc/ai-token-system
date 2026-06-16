@@ -9,9 +9,12 @@ public class UserDetailDO {
     private String businessName;
     private String email;
     private String phone;
+    private String userId;
+    private String accountId;
+    private String accessKey;
+    private String securityKey;
     private String role;
     private Integer status;
     private Long apiKeyCount;
-    private String associatedModels;
     private String createTime;
 }

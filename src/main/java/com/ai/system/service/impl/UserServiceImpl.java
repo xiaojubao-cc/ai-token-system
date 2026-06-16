@@ -1,5 +1,6 @@
 package com.ai.system.service.impl;
 
+import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.lang.Assert;
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
@@ -10,6 +11,7 @@ import com.ai.system.controller.user.vo.ApiKeyCreateVO;
 import com.ai.system.controller.user.vo.UserCreateVO;
 import com.ai.system.controller.user.vo.UserPageQueryVO;
 import com.ai.system.controller.user.vo.UserUpdateVO;
+import com.ai.system.exception.ErrorCode;
 import com.ai.system.exception.ServiceException;
 import com.ai.system.exception.enums.UserErrorCodeConstants;
 import com.ai.system.mapper.ApiKeyMapper;
@@ -22,10 +24,15 @@ import com.ai.system.model.entity.ApiKey;
 import com.ai.system.model.entity.ModelInfo;
 import com.ai.system.model.entity.User;
 import com.ai.system.config.security.JwtBlacklistService;
+import com.ai.system.config.properties.TyyProperties;
+import com.ai.system.model.pojo.TyyApiKeyResponse;
+import com.ai.system.model.pojo.TyyResponse;
 import com.ai.system.service.UserService;
 import com.ai.system.util.mail.MailUtil;
+import com.ai.system.util.tyy.TyySignUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.ai.system.model.pojo.Response;
 import com.nimbusds.jwt.JWT;
 import com.nimbusds.jwt.JWTParser;
 import jakarta.annotation.Resource;
@@ -49,9 +56,6 @@ public class UserServiceImpl implements UserService {
     private ApiKeyMapper apiKeyMapper;
 
     @Resource
-    private ModelMapper modelMapper;
-
-    @Resource
     private PasswordEncoder passwordEncoder;
 
     @Resource
@@ -59,6 +63,12 @@ public class UserServiceImpl implements UserService {
 
     @Resource
     private JwtBlacklistService jwtBlacklistService;
+
+    @Resource
+    private TyySignUtil tyySignUtil;
+
+    @Resource
+    private TyyProperties tyyProperties;
 
     @Resource
     private HttpServletRequest request;
@@ -131,6 +141,10 @@ public class UserServiceImpl implements UserService {
         user.setPassword(passwordEncoder.encode(req.getPassword()));
         user.setEmail(req.getEmail());
         user.setPhone(req.getPhone());
+        user.setUserId(req.getUserId());
+        user.setAccountId(req.getAccountId());
+        user.setAccessKey(req.getAccessKey());
+        user.setSecurityKey(req.getSecurityKey());
         user.setRole(req.getRole() != null ? req.getRole() : "USER");
         user.setStatus(1);
         user.setCreateTime(LocalDateTime.now());
@@ -158,6 +172,18 @@ public class UserServiceImpl implements UserService {
         }
         if (req.getPhone() != null) {
             user.setPhone(req.getPhone());
+        }
+        if (req.getUserId() != null) {
+            user.setUserId(req.getUserId());
+        }
+        if (req.getAccountId() != null) {
+            user.setAccountId(req.getAccountId());
+        }
+        if (req.getAccessKey() != null) {
+            user.setAccessKey(req.getAccessKey());
+        }
+        if (req.getSecurityKey() != null) {
+            user.setSecurityKey(req.getSecurityKey());
         }
         if (StrUtil.isNotBlank(req.getRole())) {
             user.setRole(req.getRole());
@@ -223,21 +249,15 @@ public class UserServiceImpl implements UserService {
                 .eq(ApiKey::getUserId, userId)
                 .orderByDesc(ApiKey::getCreateTime));
 
-        Map<Long, ModelInfo> modelMap = buildModelMap(keys);
-
         return keys.stream().map(ak -> {
             UserApiKeyDO dto = new UserApiKeyDO();
             dto.setId(ak.getId());
             dto.setUserId(ak.getUserId());
             dto.setApikey(ak.getApikey());
-            dto.setModelId(ak.getModelId());
+            dto.setSecretKey(ak.getSecretKey());
             dto.setStatus(ak.getUseStatus());
             if (ak.getCreateTime() != null) {
                 dto.setCreateTime(ak.getCreateTime().toString());
-            }
-            ModelInfo model = modelMap.get(ak.getModelId());
-            if (model != null) {
-                dto.setModelName(model.getModelName());
             }
             return dto;
         }).collect(Collectors.toList());
@@ -245,23 +265,118 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public void addUserApiKey(Long userId, ApiKeyCreateVO req) {
-        ApiKey key = new ApiKey();
-        key.setUserId(userId);
-        key.setApikey(req.getApikey());
-        key.setModelId(req.getModelId());
-        key.setUseStatus(req.getStatus() != null ? req.getStatus() : 1);
-        key.setCreateTime(LocalDateTime.now());
-        key.setUpdateTime(LocalDateTime.now());
-        apiKeyMapper.insert(key);
+        User user = userMapper.selectById(userId);
+        Assert.notNull(user, () -> new ServiceException(UserErrorCodeConstants.USER_NOT_EXISTS));
+
+        // 调用天翼云接口创建 API Key
+        String accessKey = StrUtil.isNotBlank(user.getAccessKey()) ? user.getAccessKey() : tyyProperties.getAccessKey();
+        String securityKey = StrUtil.isNotBlank(user.getSecurityKey()) ? user.getSecurityKey() : tyyProperties.getSecurityKey();
+        TyyResponse resp = tyySignUtil.requestTyyServer(tyyProperties.getApikeyCreateUrl(), "POST", accessKey, securityKey, "{}");
+        log.info("创建API Key天翼云响应: {}", resp.getBody());
+
+        // 解析响应获取 id 和 apikey
+        String body = resp.getBody();
+        TyyApiKeyResponse apiKeyResponse = cn.hutool.json.JSONUtil.toBean(body, TyyApiKeyResponse.class);
+        if(200 == apiKeyResponse.getStatusCode()){
+            // 存储到本地数据库
+            ApiKey key = new ApiKey();
+            if (apiKeyResponse != null && apiKeyResponse.getReturnObj() != null) {
+                key.setId(apiKeyResponse.getReturnObj().getId());
+                key.setSecretKey(apiKeyResponse.getReturnObj().getApikey());
+            }
+            key.setUserId(userId);
+            key.setApikey(StrUtil.isNotBlank(req.getApikey()) ? req.getApikey() : "");
+            key.setUseStatus(req.getStatus() != null ? req.getStatus() : 1);
+            key.setCreateTime(LocalDateTime.now());
+            key.setUpdateTime(LocalDateTime.now());
+            apiKeyMapper.insert(key);
+        }
     }
 
     @Override
     public void deleteApiKey(Long apikeyId) {
-        apiKeyMapper.deleteById(apikeyId);
+        ApiKey apiKey = apiKeyMapper.selectById(apikeyId);
+        if (apiKey == null) {
+            return;
+        }
+        // 调用天翼云接口删除 API Key
+        User user = userMapper.selectById(apiKey.getUserId());
+        if (user != null) {
+            String accessKey = StrUtil.isNotBlank(user.getAccessKey()) ? user.getAccessKey() : tyyProperties.getAccessKey();
+            String securityKey = StrUtil.isNotBlank(user.getSecurityKey()) ? user.getSecurityKey() : tyyProperties.getSecurityKey();
+            String body = "{\"id\":" + apikeyId + "}";
+            TyyResponse resp = tyySignUtil.requestTyyServer(tyyProperties.getApikeyDeleteUrl(), "POST", accessKey, securityKey, body);
+            log.info("【删除API Key天翼云响应: {}】", resp.getBody());
+            if(200 == resp.getStatusCode()){
+                // 删除本地记录
+                apiKeyMapper.deleteById(apikeyId);
+            }
+        }
     }
 
     /**
-     * 批量补全用户详情：API Key 数量、关联模型
+     * 更新 API Key 状态（调用天翼云接口）
+     */
+    public void updateApiKeyStatus(Long apikeyId, Integer useStatus) {
+        ApiKey apiKey = apiKeyMapper.selectById(apikeyId);
+        if (apiKey == null) {
+            throw new ServiceException(UserErrorCodeConstants.USERNAME_EMAIL_MISMATCH);
+        }
+        User user = userMapper.selectById(apiKey.getUserId());
+        String accessKey = user != null && StrUtil.isNotBlank(user.getAccessKey()) ? user.getAccessKey() : tyyProperties.getAccessKey();
+        String securityKey = user != null && StrUtil.isNotBlank(user.getSecurityKey()) ? user.getSecurityKey() : tyyProperties.getSecurityKey();
+        String body = "{\"id\":" + apikeyId + ",\"useStatus\":" + useStatus + "}";
+        TyyResponse resp = tyySignUtil.requestTyyServer(tyyProperties.getApikeyUpdateUrl(), "POST", accessKey, securityKey, body);
+        log.info("【更新API Key状态天翼云响应: {}】", resp.getBody());
+        if(200 == resp.getCode()){
+            // 更新本地记录
+            apiKey.setUseStatus(useStatus);
+            apiKey.setUpdateTime(LocalDateTime.now());
+            apiKeyMapper.updateById(apiKey);
+        }else {
+            throw new ServiceException(new ErrorCode(resp.getCode(), resp.getMessage()));
+        }
+    }
+
+    /**
+     * 更新 API Key 明文（仅本地数据库，不调天翼云）
+     */
+    public void updateApiKeyPlaintext(Long apikeyId, String apikey) {
+        ApiKey apiKey = apiKeyMapper.selectById(apikeyId);
+        if (apiKey == null) {
+            throw new ServiceException(UserErrorCodeConstants.USERNAME_EMAIL_MISMATCH);
+        }
+        apiKey.setApikey(apikey);
+        apiKey.setUpdateTime(LocalDateTime.now());
+        apiKeyMapper.updateById(apiKey);
+    }
+
+    /**
+     * 查询用户可用模型列表（调用天翼云接口）
+     */
+    public List<Map<String, Object>> queryAvailableModels(Long userId) {
+        User user = userMapper.selectById(userId);
+        Assert.notNull(user, () -> new ServiceException(UserErrorCodeConstants.USER_NOT_EXISTS));
+
+        String accessKey = StrUtil.isNotBlank(user.getAccessKey()) ? user.getAccessKey() : tyyProperties.getAccessKey();
+        String securityKey = StrUtil.isNotBlank(user.getSecurityKey()) ? user.getSecurityKey() : tyyProperties.getSecurityKey();
+        String url = tyyProperties.getModelListUrl();
+        TyyResponse resp = tyySignUtil.requestTyyServer(url, "GET", accessKey, securityKey, "{}");
+        log.info("查询可用模型天翼云响应: {}", resp.getBody());
+
+        String body = resp.getBody();
+        Map<String, Object> resultMap = cn.hutool.json.JSONUtil.toBean(body, Map.class);
+        Object resultObj = resultMap.get("returnObj");
+        if (resultObj instanceof List) {
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> list = (List<Map<String, Object>>) resultObj;
+            return list;
+        }
+        return Collections.emptyList();
+    }
+
+    /**
+     * 批量补全用户详情：API Key 数量
      */
     private List<UserDetailDO> enrichUserDetails(List<User> users) {
         if (users.isEmpty()) {
@@ -276,9 +391,6 @@ public class UserServiceImpl implements UserService {
         Map<Long, List<ApiKey>> userKeyMap = allKeys.stream()
                 .collect(Collectors.groupingBy(ApiKey::getUserId));
 
-        // 查询所有关联模型
-        Map<Long, ModelInfo> modelMap = buildModelMap(allKeys);
-
         return users.stream().map(u -> {
             UserDetailDO dto = new UserDetailDO();
             dto.setId(u.getId());
@@ -286,6 +398,10 @@ public class UserServiceImpl implements UserService {
             dto.setBusinessName(u.getBusinessName());
             dto.setEmail(u.getEmail());
             dto.setPhone(u.getPhone());
+            dto.setUserId(u.getUserId());
+            dto.setAccountId(u.getAccountId());
+            dto.setAccessKey(u.getAccessKey());
+            dto.setSecurityKey(u.getSecurityKey());
             dto.setRole(u.getRole());
             dto.setStatus(u.getStatus());
             if (u.getCreateTime() != null) {
@@ -295,29 +411,8 @@ public class UserServiceImpl implements UserService {
             List<ApiKey> userKeys = userKeyMap.getOrDefault(u.getId(), Collections.emptyList());
             dto.setApiKeyCount((long) userKeys.size());
 
-            String models = userKeys.stream()
-                    .map(ak -> modelMap.get(ak.getModelId()))
-                    .filter(Objects::nonNull)
-                    .map(ModelInfo::getModelName)
-                    .distinct()
-                    .collect(Collectors.joining(", "));
-            dto.setAssociatedModels(models.isEmpty() ? null : models);
-
             return dto;
         }).collect(Collectors.toList());
-    }
-
-    private Map<Long, ModelInfo> buildModelMap(List<ApiKey> apiKeys) {
-        List<Long> modelIds = apiKeys.stream()
-                .map(ApiKey::getModelId)
-                .filter(Objects::nonNull)
-                .distinct()
-                .collect(Collectors.toList());
-        if (modelIds.isEmpty()) {
-            return Collections.emptyMap();
-        }
-        List<ModelInfo> models = modelMapper.selectBatchIds(modelIds);
-        return models.stream().collect(Collectors.toMap(ModelInfo::getId, m -> m));
     }
 
     private void blacklistCurrentToken() {

@@ -11,6 +11,7 @@ import com.ai.system.model.dto.user.UserApiKeyDO;
 import com.ai.system.model.dto.user.UserPageResultDO;
 
 import java.util.List;
+import java.util.Map;
 
 public interface UserService {
 
@@ -31,4 +32,10 @@ public interface UserService {
     void addUserApiKey(Long userId, ApiKeyCreateVO req);
 
     void deleteApiKey(Long apikeyId);
+
+    void updateApiKeyStatus(Long apikeyId, Integer useStatus);
+
+    void updateApiKeyPlaintext(Long apikeyId, String apikey);
+
+    List<Map<String, Object>> queryAvailableModels(Long userId);
 }

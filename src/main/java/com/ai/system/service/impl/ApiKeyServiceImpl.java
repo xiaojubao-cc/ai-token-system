@@ -8,17 +8,16 @@ import com.ai.system.controller.apikey.vo.ApiKeyItemVO;
 import com.ai.system.controller.apikey.vo.ApiKeyPageVO;
 import com.ai.system.model.dto.apikey.ApikeyDO;
 import com.ai.system.mapper.ApiKeyMapper;
-import com.ai.system.mapper.ModelMapper;
 import com.ai.system.mapper.UserMapper;
 import com.ai.system.model.dto.apikey.ApikeyPageResultDO;
 import com.ai.system.model.entity.ApiKey;
-import com.ai.system.model.entity.ModelInfo;
 import com.ai.system.model.entity.User;
+import com.ai.system.model.pojo.TyyResponse;
 import com.ai.system.service.ApiKeyService;
 import com.ai.system.util.tyy.TyySignUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.ffcs.ebp.ebpsdk.common.Response;
+import com.ai.system.model.pojo.Response;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -36,9 +35,6 @@ public class ApiKeyServiceImpl implements ApiKeyService {
 
     @Resource
     private UserMapper userMapper;
-
-    @Resource
-    private ModelMapper modelMapper;
 
     @Resource
     private TyyProperties tyyProperties;
@@ -86,8 +82,8 @@ public class ApiKeyServiceImpl implements ApiKeyService {
      */
     public void syncFromTyy() {
         String url = tyyProperties.getApikeyUrl() + "?page=1&pageSize=1000";
-        Response resp = tyySignUtil.requestTyyServer(url, "GET", null);
-        String json = JSONUtil.toJsonStr(resp);
+        TyyResponse response = tyySignUtil.requestTyyServer(url, "GET", tyyProperties.getAccessKey(), tyyProperties.getSecurityKey(), null);
+        String json = JSONUtil.toJsonStr(response);
         ApiKeyPageVO tyyResult = JSONUtil.toBean(json,
                 new TypeReference<ApiKeyPageVO>() {}, false);
         if (tyyResult == null || tyyResult.getList() == null) {
@@ -98,12 +94,12 @@ public class ApiKeyServiceImpl implements ApiKeyService {
             if (exist == null) {
                 ApiKey entity = new ApiKey();
                 entity.setId(item.getId());
-                entity.setApikey(item.getApikey());
+                entity.setSecretKey(item.getApikey());
                 entity.setUserId(item.getUserId());
                 entity.setUseStatus(item.getUseStatus());
                 apiKeyMapper.insert(entity);
             } else {
-                exist.setApikey(item.getApikey());
+                exist.setSecretKey(item.getApikey());
                 exist.setUseStatus(item.getUseStatus());
                 if (item.getUserId() != null) {
                     exist.setUserId(item.getUserId());
@@ -115,14 +111,13 @@ public class ApiKeyServiceImpl implements ApiKeyService {
 
     private ApikeyPageResultDO  enrichWithUserAndModel(List<ApiKey> apiKeys,Page<ApiKey> result) {
         Map<Long, User> userMap = buildUserMap(apiKeys);
-        Map<Long, ModelInfo> modelMap = buildModelMap(apiKeys);
 
         List<ApikeyDO> list = apiKeys.stream().map(ak -> {
             ApikeyDO dto = new ApikeyDO();
             dto.setId(ak.getId());
             dto.setUserId(ak.getUserId());
             dto.setApikey(ak.getApikey());
-            dto.setModelId(ak.getModelId());
+            dto.setSecretKey(ak.getSecretKey());
             dto.setUseStatus(ak.getUseStatus());
             if (ak.getCreateTime() != null) {
                 dto.setCreateTime(ak.getCreateTime().toString());
@@ -130,11 +125,7 @@ public class ApiKeyServiceImpl implements ApiKeyService {
             User user = userMap.get(ak.getUserId());
             if (user != null) {
                 dto.setUsername(user.getUsername());
-            }
-            ModelInfo model = modelMap.get(ak.getModelId());
-            if (model != null) {
-                dto.setModelName(model.getModelName());
-                dto.setModelCode(model.getModelCode());
+                dto.setBusinessName(user.getBusinessName());
             }
             return dto;
         }).collect(Collectors.toList());
@@ -159,16 +150,4 @@ public class ApiKeyServiceImpl implements ApiKeyService {
         return users.stream().collect(Collectors.toMap(User::getId, u -> u));
     }
 
-    private Map<Long, ModelInfo> buildModelMap(List<ApiKey> apiKeys) {
-        List<Long> modelIds = apiKeys.stream()
-                .map(ApiKey::getModelId)
-                .filter(id -> id != null)
-                .distinct()
-                .collect(Collectors.toList());
-        if (modelIds.isEmpty()) {
-            return Map.of();
-        }
-        List<ModelInfo> models = modelMapper.selectBatchIds(modelIds);
-        return models.stream().collect(Collectors.toMap(ModelInfo::getId, m -> m));
-    }
 }

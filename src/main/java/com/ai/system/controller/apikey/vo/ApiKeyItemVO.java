@@ -7,5 +7,6 @@ public class ApiKeyItemVO {
     private Long id;
     private Long userId;
     private String apikey;
+    private String secretKey;
     private Integer useStatus;
 }

@@ -11,14 +11,14 @@ import java.time.LocalDateTime;
 @TableName("ai_token_apikey")
 public class ApiKey {
 
-    @TableId(type = IdType.AUTO)
+    @TableId(type = IdType.INPUT)
     private Long id;
 
     private Long userId;
 
     private String apikey;
 
-    private Long modelId;
+    private String secretKey;
 
     private Integer useStatus;
 

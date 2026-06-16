@@ -57,9 +57,12 @@ public class UserTokenController {
             TokenUsageExportDO e = new TokenUsageExportDO();
             e.setBusinessName(d.getBusinessName());
             e.setApikey(d.getApikey());
-            e.setModelName(d.getModelName());
             e.setTokens(d.getTokens());
+            e.setInputTokens(d.getInputTokens());
+            e.setOutputTokens(d.getOutputTokens());
             e.setRequest(d.getRequest());
+            e.setTotalDuration(d.getTotalDuration());
+            e.setTotalAmount(d.getTotalAmount());
             e.setRecordDate(d.getRecordDate());
             return e;
         }).collect(Collectors.toList());

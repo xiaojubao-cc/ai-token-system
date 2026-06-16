@@ -76,26 +76,66 @@ public class UserController {
     /**
      * 查看用户的 API Key 列表
      */
-    @GetMapping("/users/{userId}/apikeys")
-    public CommonResult<List<UserApiKeyDO>> userApiKeys(@PathVariable Long userId) {
+    @GetMapping("/apikey/list")
+    public CommonResult<List<UserApiKeyDO>> userApiKeys(@RequestParam Long userId) {
         return CommonResult.success(userService.getUserApiKeys(userId));
     }
 
     /**
      * 为用户新增 API Key
      */
-    @PostMapping("/users/{userId}/apikeys/create")
-    public CommonResult<?> addApiKey(@PathVariable Long userId, @RequestBody ApiKeyCreateVO req) {
-        userService.addUserApiKey(userId, req);
+    @PostMapping("/apikey/create")
+    public CommonResult<?> addApiKey(@RequestBody Map<String, Object> req) {
+        Long userId = ((Number) req.get("userId")).longValue();
+        ApiKeyCreateVO vo = new ApiKeyCreateVO();
+        Object statusObj = req.get("status");
+        if (statusObj instanceof Number) {
+            vo.setStatus(((Number) statusObj).intValue());
+        }
+        Object apikeyObj = req.get("apikey");
+        if (apikeyObj instanceof String) {
+            vo.setApikey((String) apikeyObj);
+        }
+        userService.addUserApiKey(userId, vo);
         return CommonResult.success(null);
     }
 
     /**
      * 删除 API Key（管理员）
      */
-    @PostMapping("/apikeys/delete")
+    @PostMapping("/apikey/delete")
     public CommonResult<?> deleteApiKey(@RequestBody Map<String, Long> req) {
         userService.deleteApiKey(req.get("id"));
         return CommonResult.success(null);
+    }
+
+    /**
+     * 更新 API Key 状态（调用天翼云接口）
+     */
+    @PostMapping("/apikey/update")
+    public CommonResult<?> updateApiKeyStatus(@RequestBody Map<String, Object> req) {
+        Long id = ((Number) req.get("id")).longValue();
+        Integer useStatus = ((Number) req.get("useStatus")).intValue();
+        userService.updateApiKeyStatus(id, useStatus);
+        return CommonResult.success(null);
+    }
+
+    /**
+     * 更新 API Key 明文（仅本地数据库，不调天翼云）
+     */
+    @PostMapping("/apikey/updatePlaintext")
+    public CommonResult<?> updateApiKeyPlaintext(@RequestBody Map<String, Object> req) {
+        Long id = ((Number) req.get("id")).longValue();
+        String apikey = (String) req.get("apikey");
+        userService.updateApiKeyPlaintext(id, apikey);
+        return CommonResult.success(null);
+    }
+
+    /**
+     * 查询用户可用的模型列表（调用天翼云接口）
+     */
+    @GetMapping("/models/available")
+    public CommonResult<List<Map<String, Object>>> queryAvailableModels(@RequestParam Long userId) {
+        return CommonResult.success(userService.queryAvailableModels(userId));
     }
 }

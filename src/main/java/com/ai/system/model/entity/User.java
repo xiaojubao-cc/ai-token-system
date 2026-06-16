@@ -24,6 +24,14 @@ public class User {
 
     private String email;
 
+    private String userId;
+
+    private String accountId;
+
+    private String accessKey;
+
+    private String securityKey;
+
     private String role;
 
     private Integer status;
