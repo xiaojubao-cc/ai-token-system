@@ -1,6 +1,5 @@
 package com.ai.system.service.impl;
 
-import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.lang.Assert;
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
@@ -15,13 +14,11 @@ import com.ai.system.exception.ErrorCode;
 import com.ai.system.exception.ServiceException;
 import com.ai.system.exception.enums.UserErrorCodeConstants;
 import com.ai.system.mapper.ApiKeyMapper;
-import com.ai.system.mapper.ModelMapper;
 import com.ai.system.mapper.UserMapper;
 import com.ai.system.model.dto.user.UserApiKeyDO;
 import com.ai.system.model.dto.user.UserDetailDO;
 import com.ai.system.model.dto.user.UserPageResultDO;
 import com.ai.system.model.entity.ApiKey;
-import com.ai.system.model.entity.ModelInfo;
 import com.ai.system.model.entity.User;
 import com.ai.system.config.security.JwtBlacklistService;
 import com.ai.system.config.properties.TyyProperties;
@@ -32,7 +29,6 @@ import com.ai.system.util.mail.MailUtil;
 import com.ai.system.util.tyy.TyySignUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.ai.system.model.pojo.Response;
 import com.nimbusds.jwt.JWT;
 import com.nimbusds.jwt.JWTParser;
 import jakarta.annotation.Resource;

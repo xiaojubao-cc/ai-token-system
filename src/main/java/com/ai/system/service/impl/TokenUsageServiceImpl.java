@@ -1,6 +1,5 @@
 package com.ai.system.service.impl;
 
-import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.json.JSONUtil;
 import com.ai.system.config.properties.TyyProperties;
 import com.ai.system.mapper.ApiKeyMapper;
@@ -19,14 +18,12 @@ import com.ai.system.model.entity.TokenUsageDetailResDuration;
 import com.ai.system.model.entity.TokenUsageDetailResToken;
 import com.ai.system.model.entity.TokenUsageDetailStage;
 import com.ai.system.model.entity.User;
-import com.ai.system.model.pojo.TyyApiKeyResponse;
+
 import com.ai.system.model.pojo.TyyResponse;
 import com.ai.system.model.pojo.TyyTokenUsageResponse;
 import com.ai.system.service.TokenUsageService;
 import com.ai.system.util.tyy.TyySignUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.ffcs.ebp.ebpsdk.common.Response;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;

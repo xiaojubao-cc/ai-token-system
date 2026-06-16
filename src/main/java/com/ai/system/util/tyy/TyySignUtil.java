@@ -1,8 +1,6 @@
 package com.ai.system.util.tyy;
 
-import cn.hutool.json.JSONUtil;
 import com.ai.system.config.properties.TyyProperties;
-import com.ai.system.model.pojo.Response;
 import com.ai.system.model.pojo.TyyResponse;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
