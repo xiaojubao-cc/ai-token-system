@@ -324,13 +324,11 @@ public class UserServiceImpl implements UserService {
         String body = "{\"id\":" + apikeyId + ",\"useStatus\":" + useStatus + "}";
         TyyResponse resp = tyySignUtil.requestTyyServer(tyyProperties.getApikeyUpdateUrl(), "POST", accessKey, securityKey, body);
         log.info("【更新API Key状态天翼云响应: {}】", resp.getBody());
-        if(200 == resp.getCode()){
+        if(Objects.nonNull(resp.getStatusCode()) && 200 == resp.getStatusCode()){
             // 更新本地记录
             apiKey.setUseStatus(useStatus);
             apiKey.setUpdateTime(LocalDateTime.now());
             apiKeyMapper.updateById(apiKey);
-        }else {
-            throw new ServiceException(new ErrorCode(resp.getCode(), resp.getMessage()));
         }
     }
 

@@ -8,8 +8,6 @@ import java.util.Map;
 @Data
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class TyyResponse {
-    private Integer code;
-    private String message;
     private String body;
     private Integer statusCode;
     private Map<String,Object> returnObj;
